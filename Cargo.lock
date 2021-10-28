@@ -120,6 +120,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert_float_eq"
+version = "1.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cea652ffbedecf29e9cd41bb4c066881057a42c0c119040f022802b26853e77"
+
+[[package]]
 name = "async-channel"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -729,6 +735,7 @@ version = "0.0.0"
 dependencies = [
  "bevy",
  "bevy_egui",
+ "enterpolation",
 ]
 
 [[package]]
@@ -1067,6 +1074,16 @@ name = "emath"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cca5179aa9d15128cebb79bb56dda73a79cc66b402056ff19a992e54b365e15c"
+
+[[package]]
+name = "enterpolation"
+version = "0.1.1"
+source = "git+https://github.com/LU15W1R7H/enterpolation#59231f4c0e2e813ff9272d76ed9d4d8f86c1a20b"
+dependencies = [
+ "assert_float_eq",
+ "num-traits",
+ "topology-traits",
+]
 
 [[package]]
 name = "env_logger"
@@ -2552,6 +2569,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a31142970826733df8241ef35dc040ef98c679ab14d7c3e54d827099b3acecaa"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "topology-traits"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f34076ac0a15d54be52883b0987cb1b35dddede52ce4003c7a3a3490a9252ec"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
