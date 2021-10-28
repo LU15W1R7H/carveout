@@ -1,5 +1,3 @@
-use std::ops::RangeInclusive;
-
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 
@@ -82,24 +80,54 @@ impl Painting {
   }
 }
 
-fn spline_system(egui_context: ResMut<EguiContext>, splines: Res<Spline>) {
+fn spline_system(egui_context: ResMut<EguiContext>, mut splines: ResMut<Spline>) {
+  egui::Window::new("BSpline Control").show(egui_context.ctx(), |ui| {
+    ui.label("Number of elements");
+    let mut nelements = splines.elements.len();
+    ui.add(egui::DragValue::new(&mut nelements));
+    splines.elements.resize(nelements, 1.0);
+    ui.separator();
+    for i in 0..nelements {
+      ui.add(egui::DragValue::new(&mut splines.elements[i]).speed(0.1));
+    }
+  });
+
+  let spline = BSpline::builder()
+    .elements(splines.elements.clone())
+    .knots(vec![-2.0, -2.0, -2.0, -1.0, 0.0, 1.0, 2.0, 2.0, 2.0])
+    .dynamic()
+    .build()
+    .unwrap();
+
+  let nsamples = 100;
+  let points: Vec<egui::Pos2> = spline
+    .take(nsamples)
+    .enumerate()
+    .map(|(i, v)| egui::Pos2::new(i as f32 / nsamples as f32, v as f32))
+    .collect();
+  let min = points
+    .iter()
+    .map(|p| p.y)
+    .min_by(|a, b| PartialOrd::partial_cmp(a, b).unwrap())
+    .unwrap();
+  let max = points
+    .iter()
+    .map(|p| p.y)
+    .max_by(|a, b| PartialOrd::partial_cmp(a, b).unwrap())
+    .unwrap();
+
+  let domain = min..=max;
+
   egui::Window::new("BSpline").show(egui_context.ctx(), |ui| {
     use egui::{emath, Pos2, Rect, Sense};
 
     let (response, painter) = ui.allocate_painter(ui.available_size_before_wrap(), Sense::drag());
 
-    let to_screen = emath::RectTransform::from_to(
-      Rect::from_x_y_ranges(0.0..=1.0, splines.domain.clone()),
-      response.rect,
-    );
+    let to_screen =
+      emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, domain), response.rect);
 
     let mut shapes = vec![];
-    let points: Vec<Pos2> = splines
-      .points
-      .iter()
-      .cloned()
-      .map(|p| to_screen * p)
-      .collect();
+    let points: Vec<Pos2> = points.iter().map(|p| to_screen * *p).collect();
     shapes.push(egui::Shape::line(points, splines.stroke));
     painter.extend(shapes);
 
@@ -108,44 +136,19 @@ fn spline_system(egui_context: ResMut<EguiContext>, splines: Res<Spline>) {
 }
 
 struct Spline {
-  points: Vec<egui::Pos2>,
+  //points: Vec<egui::Pos2>,
   stroke: egui::Stroke,
-  domain: RangeInclusive<f32>,
+  //domain: RangeInclusive<f32>,
+  elements: Vec<f32>,
 }
 
 impl Spline {
   fn new() -> Self {
-    let spline = BSpline::builder()
-      .clamped()
-      .elements([0.0, 0.0, 1.0, 6.0, 0.0, -3.0, 0.0])
-      .equidistant::<f64>() // evenly spaced knots
-      .degree(3)
-      .domain(-2.0, 2.0)
-      .constant::<4>() // degree + 1
-      .build()
-      .unwrap();
-
-    let nsamples = 100;
-    let points: Vec<egui::Pos2> = spline
-      .take(nsamples)
-      .enumerate()
-      .map(|(i, v)| egui::Pos2::new(i as f32 / nsamples as f32, v as f32))
-      .collect();
-    let min = points
-      .iter()
-      .map(|p| p.y)
-      .min_by(|a, b| PartialOrd::partial_cmp(a, b).unwrap())
-      .unwrap();
-    let max = points
-      .iter()
-      .map(|p| p.y)
-      .max_by(|a, b| PartialOrd::partial_cmp(a, b).unwrap())
-      .unwrap();
-
     Self {
-      points,
+      //points,
       stroke: egui::Stroke::new(3.0, egui::Color32::GREEN),
-      domain: min..=max,
+      elements: vec![0.0, 0.0, 0.0, 6.0, 0.0, 0.0, 0.0],
+      //domain: min..=max,
     }
   }
 }
