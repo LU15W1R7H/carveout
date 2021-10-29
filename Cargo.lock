@@ -735,6 +735,7 @@ version = "0.0.0"
 dependencies = [
  "bevy",
  "bevy_egui",
+ "egui",
  "enterpolation",
 ]
 
@@ -1106,6 +1107,7 @@ dependencies = [
  "atomic_refcell",
  "emath",
  "ordered-float",
+ "parking_lot",
 ]
 
 [[package]]

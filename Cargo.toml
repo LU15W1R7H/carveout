@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.5.0", default-features = false, features = ["dynamic", "bevy_dynamic_plugin", "bevy_wgpu", "bevy_winit", "render", "png", "hdr", "x11"] }
+egui = { version = "0.14.0", features = ["multi_threaded"] }
 bevy_egui = "0.7.1"
 #enterpolation = "0.1.1"
 enterpolation = { git = "https://github.com/LU15W1R7H/enterpolation" }

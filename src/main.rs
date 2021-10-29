@@ -18,7 +18,7 @@ fn init(mut commands: Commands) {
   commands.insert_resource(Spline::new());
 }
 
-fn ui(egui_context: ResMut<EguiContext>, mut painting: ResMut<Painting>) {
+fn ui(egui_context: Res<EguiContext>, mut painting: ResMut<Painting>) {
   egui::Window::new("Welcome").show(egui_context.ctx(), |ui| {
     ui.label("Welcome to Carveout.");
     ui.separator();
@@ -80,7 +80,7 @@ impl Painting {
   }
 }
 
-fn spline_system(egui_context: ResMut<EguiContext>, mut splines: ResMut<Spline>) {
+fn spline_system(egui_context: Res<EguiContext>, mut splines: ResMut<Spline>) {
   egui::Window::new("BSpline Control").show(egui_context.ctx(), |ui| {
     ui.label("Number of elements");
     let mut nelements = splines.elements.len();
