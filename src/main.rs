@@ -1,154 +1,25 @@
+mod canvas;
+mod splines;
+mod toolbox;
+
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContext, EguiPlugin};
-
-use enterpolation::{bspline::BSpline, Curve};
 
 fn main() {
   App::build()
     .add_plugins(DefaultPlugins)
     .add_plugin(EguiPlugin)
-    .add_startup_system(init.system())
-    .add_system(ui.system())
-    .add_system(spline_system.system())
+    //.add_plugin(splines::SplinesPlugin)
+    .add_plugin(canvas::CanvasPlugin)
+    .add_plugin(toolbox::ToolboxPlugin)
+    .add_system(welcome_ui.system())
     .run();
 }
 
-fn init(mut commands: Commands) {
-  commands.insert_resource(Painting::new());
-  commands.insert_resource(Spline::new());
-}
-
-fn ui(egui_context: Res<EguiContext>, mut painting: ResMut<Painting>) {
-  egui::Window::new("Welcome").show(egui_context.ctx(), |ui| {
+fn welcome_ui(egui: Res<EguiContext>) {
+  egui::Window::new("Welcome").show(egui.ctx(), |ui| {
     ui.label("Welcome to Carveout.");
     ui.separator();
     ui.label("A tool for modern scientific digital pen note taking.");
   });
-
-  egui::Window::new("Drawing").show(egui_context.ctx(), |ui| {
-    use egui::{emath, Pos2, Rect, Sense};
-    let (mut response, painter) =
-      ui.allocate_painter(ui.available_size_before_wrap(), Sense::drag());
-
-    let to_screen = emath::RectTransform::from_to(
-      Rect::from_min_size(Pos2::ZERO, response.rect.square_proportions()),
-      response.rect,
-    );
-    let from_screen = to_screen.inverse();
-
-    if painting.lines.is_empty() {
-      painting.lines.push(vec![]);
-    }
-
-    let current_line = painting.lines.last_mut().unwrap();
-
-    if let Some(pointer_pos) = response.interact_pointer_pos() {
-      let canvas_pos = from_screen * pointer_pos;
-      if current_line.last() != Some(&canvas_pos) {
-        current_line.push(canvas_pos);
-        response.mark_changed();
-      }
-    } else if !current_line.is_empty() {
-      painting.lines.push(vec![]);
-      response.mark_changed();
-    }
-
-    let mut shapes = vec![];
-    for line in &painting.lines {
-      if line.len() >= 2 {
-        let points: Vec<Pos2> = line.iter().map(|p| to_screen * *p).collect();
-        shapes.push(egui::Shape::line(points, painting.stroke));
-      }
-    }
-    painter.extend(shapes);
-
-    response
-  });
-}
-
-pub struct Painting {
-  /// in 0-1 normalized coordinates
-  lines: Vec<Vec<egui::Pos2>>,
-  stroke: egui::Stroke,
-}
-impl Painting {
-  fn new() -> Self {
-    Self {
-      stroke: egui::Stroke::new(1.0, egui::Color32::LIGHT_BLUE),
-      lines: Vec::new(),
-    }
-  }
-}
-
-fn spline_system(egui_context: Res<EguiContext>, mut splines: ResMut<Spline>) {
-  egui::Window::new("BSpline Control").show(egui_context.ctx(), |ui| {
-    ui.label("Number of elements");
-    let mut nelements = splines.elements.len();
-    ui.add(egui::DragValue::new(&mut nelements));
-    splines.elements.resize(nelements, 1.0);
-    ui.separator();
-    for i in 0..nelements {
-      ui.add(egui::DragValue::new(&mut splines.elements[i]).speed(0.1));
-    }
-  });
-
-  let spline = BSpline::builder()
-    .elements(splines.elements.clone())
-    .knots(vec![-2.0, -2.0, -2.0, -1.0, 0.0, 1.0, 2.0, 2.0, 2.0])
-    .dynamic()
-    .build()
-    .unwrap();
-
-  let nsamples = 100;
-  let points: Vec<egui::Pos2> = spline
-    .take(nsamples)
-    .enumerate()
-    .map(|(i, v)| egui::Pos2::new(i as f32 / nsamples as f32, v as f32))
-    .collect();
-  let min = points
-    .iter()
-    .map(|p| p.y)
-    .min_by(|a, b| PartialOrd::partial_cmp(a, b).unwrap())
-    .unwrap();
-  let max = points
-    .iter()
-    .map(|p| p.y)
-    .max_by(|a, b| PartialOrd::partial_cmp(a, b).unwrap())
-    .unwrap();
-
-  let domain = min..=max;
-
-  egui::Window::new("BSpline").show(egui_context.ctx(), |ui| {
-    use egui::{emath, Pos2, Rect, Sense};
-
-    let (response, painter) = ui.allocate_painter(ui.available_size_before_wrap(), Sense::drag());
-
-    let to_screen =
-      emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, domain), response.rect);
-
-    let mut shapes = vec![];
-    let points: Vec<Pos2> = points.iter().map(|p| to_screen * *p).collect();
-    shapes.push(egui::Shape::line(points, splines.stroke));
-    painter.extend(shapes);
-
-    response
-  });
-}
-
-struct Spline {
-  //points: Vec<egui::Pos2>,
-  stroke: egui::Stroke,
-  //domain: RangeInclusive<f32>,
-  elements: Vec<f32>,
-}
-
-impl Spline {
-  fn new() -> Self {
-    Self {
-      //points,
-      stroke: egui::Stroke::new(3.0, egui::Color32::GREEN),
-      elements: vec![0.0, 0.0, 0.0, 6.0, 0.0, 0.0, 0.0],
-      //domain: min..=max,
-    }
-  }
 }
