@@ -1,4 +1,5 @@
 mod canvas;
+mod savefile;
 mod splines;
 mod toolbox;
 
@@ -12,6 +13,7 @@ fn main() {
     //.add_plugin(splines::SplinesPlugin)
     .add_plugin(canvas::CanvasPlugin)
     .add_plugin(toolbox::ToolboxPlugin)
+    .add_plugin(savefile::SavefilePlugin)
     .add_system(welcome_ui.system())
     .run();
 }

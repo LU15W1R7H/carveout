@@ -3,6 +3,8 @@ use crate::toolbox::Toolbox;
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 
+use serde::{Deserialize, Serialize};
+
 pub struct CanvasPlugin;
 impl Plugin for CanvasPlugin {
   fn build(&self, app: &mut AppBuilder) {
@@ -12,6 +14,7 @@ impl Plugin for CanvasPlugin {
   }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Curve {
   /// in 0-1 normalized coordinates
   points: Vec<egui::Pos2>,
@@ -34,7 +37,7 @@ impl Default for Curve {
   }
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct Canvas {
   curves: Vec<Curve>,
   current: Option<Curve>,
