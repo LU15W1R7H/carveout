@@ -20,6 +20,7 @@ fn main() {
 
 fn welcome_ui(egui: Res<EguiContext>) {
   egui::Window::new("Welcome").show(egui.ctx(), |ui| {
+    ui.label("rust");
     ui.label("Welcome to Carveout.");
     ui.separator();
     ui.label("A tool for modern scientific digital pen note taking.");

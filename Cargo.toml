@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.5.0", default-features = false, features = ["dynamic", "bevy_dynamic_plugin", "bevy_wgpu", "bevy_winit", "render", "png", "hdr", "x11"] }
+bevy = { version = "0.5.0", default-features = false, features = ["dynamic", "bevy_dynamic_plugin", "bevy_wgpu", "bevy_winit", "png", "x11"] }
 egui = { version = "0.15.0", features = ["multi_threaded", "serialize"] }
 bevy_egui = { git = "https://github.com/LU15W1R7H/bevy_egui" }
 #bevy_egui = "0.7.1"
