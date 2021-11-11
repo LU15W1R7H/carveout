@@ -15,6 +15,7 @@ fn main() {
     .add_plugin(toolbox::ToolboxPlugin)
     .add_plugin(savefile::SavefilePlugin)
     .add_system(welcome_ui.system())
+    //.set_runner(throttle_system)
     .run();
 }
 

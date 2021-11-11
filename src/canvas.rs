@@ -10,12 +10,16 @@ pub struct CanvasPlugin;
 impl Plugin for CanvasPlugin {
   fn build(&self, app: &mut AppBuilder) {
     app
+      .init_resource::<CurrentCurve>()
       .add_startup_system(start_up.system())
       .add_system(ui.system());
   }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Default)]
+pub struct CurrentCurve(Option<Curve>);
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Curve {
   /// in 0-1 normalized coordinates
   pub points: Vec<egui::Pos2>,
@@ -36,12 +40,6 @@ impl Default for Curve {
       stroke: egui::Stroke::new(1.0, egui::Color32::WHITE),
     }
   }
-}
-
-#[derive(Default, Serialize, Deserialize)]
-pub struct Curves {
-  pub curves: Vec<Curve>,
-  pub current: Option<Curve>,
 }
 
 pub struct CanvasUi {
@@ -65,17 +63,26 @@ impl Default for CanvasUi {
 }
 
 fn start_up(mut commands: Commands) {
-  commands.insert_resource(Curves::default());
   commands.insert_resource(CanvasUi::default());
 }
 
-fn ui(mut canvas_ui: ResMut<CanvasUi>, egui: Res<EguiContext>, mut curves: ResMut<Curves>, toolbox: Res<Toolbox>) {
+fn ui(
+  mut commands: Commands,
+  curves: Query<&Curve>,
+  mut current: ResMut<CurrentCurve>,
+  toolbox: Res<Toolbox>,
+
+  mut canvas_ui: ResMut<CanvasUi>,
+  egui: Res<EguiContext>,
+) {
   egui::Window::new("Drawing").show(egui.ctx(), |ui| {
     use crate::toolbox::ToolMode;
-    use egui::{Pos2, Sense};
 
     let (mut response, painter) =
-      ui.allocate_painter(ui.available_size_before_wrap(), Sense::drag());
+      ui.allocate_painter(ui.available_size_before_wrap(), egui::Sense::drag());
+
+    let all_curves = curves.iter().chain(current.0.as_ref());
+    render_curves(painter, &*canvas_ui, all_curves);
 
     match &toolbox.mode {
       ToolMode::Hand => {
@@ -106,38 +113,43 @@ fn ui(mut canvas_ui: ResMut<CanvasUi>, egui: Res<EguiContext>, mut curves: ResMu
       ToolMode::Pen => {
         let screen_to_canvas = canvas_ui.screen_to_canvas;
         if let Some(pointer_pos) = response.interact_pointer_pos() {
-          let current = curves.current.get_or_insert(Curve::new(toolbox.stroke));
+          let current = current.0.get_or_insert(Curve::new(toolbox.stroke));
 
           let canvas_pos = screen_to_canvas * pointer_pos;
           if current.points.last() != Some(&canvas_pos) {
             current.points.push(canvas_pos);
             response.mark_changed();
           }
-        } else if let Some(current) = curves.current.take() {
-          curves.curves.push(current);
+        } else if let Some(current) = current.0.take() {
+          commands.spawn().insert(current);
           response.mark_changed();
         }
       }
     }
 
     if toolbox.undo {
-      let _ = curves.curves.pop();
+      unimplemented!();
     }
-
-    // render lines
-    let mut shapes = Vec::new();
-    for curve in curves.curves.iter().chain(curves.current.as_ref()) {
-      if curve.points.len() >= 2 {
-        let points: Vec<Pos2> = curve
-          .points
-          .iter()
-          .map(|p| canvas_ui.canvas_to_screen * *p)
-          .collect();
-        shapes.push(egui::Shape::line(points, curve.stroke));
-      }
-    }
-    painter.extend(shapes);
 
     response
   });
+}
+
+fn render_curves<'a>(
+  painter: egui::Painter,
+  canvas_ui: &CanvasUi,
+  curves: impl Iterator<Item = &'a Curve>,
+) {
+  let mut shapes = Vec::new();
+  for curve in curves {
+    if curve.points.len() >= 2 {
+      let points: Vec<egui::Pos2> = curve
+        .points
+        .iter()
+        .map(|p| canvas_ui.canvas_to_screen * *p)
+        .collect();
+      shapes.push(egui::Shape::line(points, curve.stroke));
+    }
+  }
+  painter.extend(shapes);
 }
