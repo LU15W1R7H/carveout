@@ -9,9 +9,9 @@ impl Plugin for ToolboxPlugin {
 
 #[derive(PartialEq)]
 pub enum ToolMode {
+  Pen,
   Hand,
   Scale,
-  Pen,
 }
 
 pub struct Toolbox {

@@ -18,7 +18,7 @@ impl Default for WelcomeUiState {
   }
 }
 
-fn welcome_window_ui(egui: Res<EguiContext>, mut state: Local<WelcomeUiState>) {
+fn welcome_window_ui(mut state: Local<WelcomeUiState>, egui: Res<EguiContext>) {
   egui::Window::new("Welcome")
     .open(&mut state.open)
     .show(egui.ctx(), |ui| {

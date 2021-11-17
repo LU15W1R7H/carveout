@@ -17,5 +17,6 @@ fn main() {
     .add_plugin(bevy_egui::EguiPlugin)
     .add_plugin(ui::UiPlugin)
     .add_plugin(toolbox::ToolboxPlugin)
+    .add_plugin(savefile::SavefilePlugin)
     .run();
 }

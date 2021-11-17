@@ -60,6 +60,21 @@ fn canvas_ui(
     render_curves(painter, &*canvas_ui, all_curves);
 
     match &toolbox.mode {
+      ToolMode::Pen => {
+        let screen_to_canvas = canvas_ui.screen_to_canvas;
+        if let Some(pointer_pos) = response.interact_pointer_pos() {
+          let current = current.0.get_or_insert(Curve::new(toolbox.stroke));
+
+          let canvas_pos = screen_to_canvas * pointer_pos;
+          if current.points.last() != Some(&canvas_pos) {
+            current.points.push(canvas_pos);
+            response.mark_changed();
+          }
+        } else if let Some(current) = current.0.take() {
+          commands.spawn().insert(current);
+          response.mark_changed();
+        }
+      }
       ToolMode::Hand => {
         if egui.ctx().input().pointer.any_down() && response.hovered() {
           let mut delta = egui.ctx().input().pointer.delta();
@@ -83,21 +98,6 @@ fn canvas_ui(
           let to = response.rect;
           canvas_ui.canvas_to_screen = emath::RectTransform::from_to(from, to);
           canvas_ui.screen_to_canvas = canvas_ui.canvas_to_screen.inverse();
-        }
-      }
-      ToolMode::Pen => {
-        let screen_to_canvas = canvas_ui.screen_to_canvas;
-        if let Some(pointer_pos) = response.interact_pointer_pos() {
-          let current = current.0.get_or_insert(Curve::new(toolbox.stroke));
-
-          let canvas_pos = screen_to_canvas * pointer_pos;
-          if current.points.last() != Some(&canvas_pos) {
-            current.points.push(canvas_pos);
-            response.mark_changed();
-          }
-        } else if let Some(current) = current.0.take() {
-          commands.spawn().insert(current);
-          response.mark_changed();
         }
       }
     }
