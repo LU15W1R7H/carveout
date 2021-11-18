@@ -14,6 +14,7 @@ fn main() {
       std::time::Duration::from_millis(10),
     ))
     .add_plugins(DefaultPlugins)
+    .add_plugin(canvas::CanvasPlugin)
     .add_plugin(bevy_egui::EguiPlugin)
     .add_plugin(ui::UiPlugin)
     .add_plugin(toolbox::ToolboxPlugin)
