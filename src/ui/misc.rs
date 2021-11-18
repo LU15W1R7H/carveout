@@ -3,12 +3,13 @@ use bevy_egui::EguiContext;
 
 pub struct MiscUiPlugin;
 impl Plugin for MiscUiPlugin {
-  fn build(&self, app: &mut AppBuilder) {
-    app.init_resource::<WelcomeUiState>();
-    app.add_system(welcome_window_ui.system());
+  fn build(&self, _app: &mut AppBuilder) {
+    //app.init_resource::<WelcomeUiState>();
+    //app.add_system(welcome_window_ui.system());
   }
 }
 
+#[allow(dead_code)]
 struct WelcomeUiState {
   open: bool,
 }
@@ -18,6 +19,7 @@ impl Default for WelcomeUiState {
   }
 }
 
+#[allow(dead_code)]
 fn welcome_window_ui(mut state: Local<WelcomeUiState>, egui: Res<EguiContext>) {
   egui::Window::new("Welcome")
     .open(&mut state.open)
