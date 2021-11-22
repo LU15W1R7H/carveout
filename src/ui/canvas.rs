@@ -1,31 +1,26 @@
 use crate::{
   canvas::{CurrentCurve, Curve, Viewport},
-  toolbox::Toolbox,
   util,
+  ui::Toolbox,
 };
 
 use bevy::prelude::*;
-
-use bevy_egui::EguiContext;
 use egui::emath;
 
-pub struct CanvasUiPlugin;
-impl Plugin for CanvasUiPlugin {
-  fn build(&self, app: &mut AppBuilder) {
-    app.add_system(canvas_ui.system());
-  }
-}
-
-fn canvas_ui(
+// canvas_ui needs to be called last,
+// because the `CentralPanel` will fill the
+// remaining area.
+pub(super) fn canvas_ui(
   mut commands: Commands,
-  egui: Res<EguiContext>,
 
+  egui: &egui::CtxRef,
   mut viewport: ResMut<Viewport>,
+
   curves: Query<&Curve>,
-  mut current: ResMut<CurrentCurve>,
-  toolbox: Res<Toolbox>,
+  current: &mut CurrentCurve,
+  toolbox: &mut Toolbox,
 ) {
-  egui::SidePanel::right("canvas_panel").show(egui.ctx(), |ui| {
+  egui::CentralPanel::default().show(egui, |ui| {
     use crate::toolbox::ToolMode;
 
     let (mut response, painter) = ui.allocate_painter(
@@ -65,15 +60,15 @@ fn canvas_ui(
         }
       }
       ToolMode::Hand => {
-        if egui.ctx().input().pointer.any_down() && response.hovered() {
-          let mut delta = egui.ctx().input().pointer.delta();
+        if egui.input().pointer.any_down() && response.hovered() {
+          let mut delta = egui.input().pointer.delta();
           delta = delta * view_to_canvas.scale();
           viewport.center -= <[f32; 2]>::from(delta).into();
         }
       }
       ToolMode::Scale => {
-        if egui.ctx().input().pointer.any_down() && response.hovered() {
-          let mut delta = egui.ctx().input().pointer.delta();
+        if egui.input().pointer.any_down() && response.hovered() {
+          let mut delta = egui.input().pointer.delta();
           delta = delta * view_to_canvas.scale();
           viewport.size += delta.y;
         }
@@ -81,7 +76,7 @@ fn canvas_ui(
     }
 
     {
-      let mut size_delta = egui.ctx().input().scroll_delta;
+      let mut size_delta = egui.input().scroll_delta;
       size_delta = size_delta * view_to_canvas.scale() * 4.0;
       viewport.size -= size_delta.y;
     }

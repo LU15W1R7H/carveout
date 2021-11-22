@@ -1,27 +1,20 @@
 use crate::{
-  savefile::{LoadFileEvent, SaveFileEvent},
-  toolbox::{ToolMode, Toolbox},
+  toolbox::ToolMode,
+  ui::{LoadFileEvent, SaveFileEvent, Toolbox},
 };
 
 use bevy::prelude::*;
-use bevy_egui::EguiContext;
 
 use palette::LinSrgba;
 
-pub struct SidebarUiPlugin;
-impl Plugin for SidebarUiPlugin {
-  fn build(&self, app: &mut AppBuilder) {
-    app.add_system(sidebar_ui.system());
-  }
-}
+pub(super) fn sidebar_ui(
+  egui: &egui::CtxRef,
 
-fn sidebar_ui(
-  egui: Res<EguiContext>,
-  mut toolbox: ResMut<Toolbox>,
+  toolbox: &mut Toolbox,
   mut load_file_event: EventWriter<LoadFileEvent>,
   mut save_file_event: EventWriter<SaveFileEvent>,
 ) {
-  egui::SidePanel::left("toolbox_panel").show(egui.ctx(), |ui| {
+  egui::SidePanel::left("toolbox_panel").show(egui, |ui| {
     ui.add_space(10.0);
     ui.add(egui::Label::new("📦 Toolbox").text_style(egui::TextStyle::Heading));
     ui.add_space(20.0);
@@ -43,9 +36,9 @@ fn sidebar_ui(
     if toolbox.mode == ToolMode::Pen {
       ui.group(|ui| {
         ui.label("Pen color");
-        // TODO: is it premultiplied?
         let color = toolbox.curve_color;
         let mut color = [color.red, color.green, color.blue, color.alpha];
+        // TODO: is it premultiplied?
         ui.color_edit_button_rgba_premultiplied(&mut color);
         let color = LinSrgba::new(color[0], color[1], color[2], color[3]);
         toolbox.curve_color = color;
@@ -56,11 +49,13 @@ fn sidebar_ui(
 
     ui.group(|ui| {
       ui.label("Save and Load");
-      if ui.button("📂").clicked() {
-        load_file_event.send(LoadFileEvent);
-      } else if ui.button("📝").clicked() {
-        save_file_event.send(SaveFileEvent);
-      }
+      ui.horizontal_wrapped(|ui| {
+        if ui.button("📂").clicked() {
+          load_file_event.send(LoadFileEvent);
+        } else if ui.button("📝").clicked() {
+          save_file_event.send(SaveFileEvent);
+        }
+      });
     });
   });
 }
