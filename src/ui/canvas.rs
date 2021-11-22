@@ -1,6 +1,7 @@
 use crate::{
   canvas::{CurrentCurve, Curve, Viewport},
   toolbox::Toolbox,
+  util,
 };
 
 use bevy::prelude::*;
@@ -47,10 +48,14 @@ fn canvas_ui(
     match &toolbox.mode {
       ToolMode::Pen => {
         if let Some(pointer_pos) = response.interact_pointer_pos() {
-          let current = current.0.get_or_insert(Curve::new(toolbox.stroke));
+          let current = current
+            .0
+            .get_or_insert(Curve::new(toolbox.curve_width, toolbox.curve_color));
 
           let canvas_pos = view_to_canvas * pointer_pos;
-          if current.points.last() != Some(&canvas_pos) {
+          let canvas_pos = util::pos_egui2bevy(canvas_pos);
+          let last = current.points.last();
+          if last != Some(&canvas_pos) {
             current.points.push(canvas_pos);
             response.mark_changed();
           }
@@ -96,9 +101,16 @@ fn render_curves<'a>(
 ) {
   let mut shapes = Vec::new();
   for curve in curves {
+    let stroke = egui::Stroke::new(curve.width, util::color_palette2egui(curve.color));
     if curve.points.len() >= 2 {
-      let points: Vec<egui::Pos2> = curve.points.iter().map(|p| canvas_to_view * *p).collect();
-      shapes.push(egui::Shape::line(points, curve.stroke));
+      let points: Vec<egui::Pos2> = curve
+        .points
+        .iter()
+        .cloned()
+        .map(|p| egui::Pos2::new(p.x, p.y))
+        .map(|p| canvas_to_view * p)
+        .collect();
+      shapes.push(egui::Shape::line(points, stroke));
     }
   }
   painter.extend(shapes);

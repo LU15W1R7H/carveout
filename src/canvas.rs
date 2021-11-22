@@ -1,7 +1,8 @@
 use bevy::prelude::*;
-use serde::{Deserialize, Serialize};
-
 use egui::emath;
+
+use palette::rgb::LinSrgba;
+use serde::{Deserialize, Serialize};
 
 pub struct CanvasPlugin;
 impl Plugin for CanvasPlugin {
@@ -14,17 +15,19 @@ impl Plugin for CanvasPlugin {
 #[derive(Default)]
 pub struct CurrentCurve(pub Option<Curve>);
 
+/// in canvas space
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Curve {
-  /// in 0-1 normalized coordinates
-  pub points: Vec<egui::Pos2>,
-  pub stroke: egui::Stroke,
+  pub points: Vec<Vec2>,
+  pub width: f32,
+  pub color: LinSrgba,
 }
 impl Curve {
-  pub fn new(stroke: egui::Stroke) -> Self {
+  pub fn new(width: f32, color: LinSrgba) -> Self {
     Self {
       points: Vec::new(),
-      stroke,
+      width,
+      color,
     }
   }
 }
@@ -32,7 +35,8 @@ impl Default for Curve {
   fn default() -> Self {
     Self {
       points: Vec::new(),
-      stroke: egui::Stroke::new(1.0, egui::Color32::WHITE),
+      width: 1.0,
+      color: LinSrgba::new(1.0, 1.0, 1.0, 1.0),
     }
   }
 }

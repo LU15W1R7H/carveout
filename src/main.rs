@@ -5,6 +5,7 @@ mod savefile;
 mod splines;
 mod toolbox;
 mod ui;
+mod util;
 
 use bevy::prelude::*;
 

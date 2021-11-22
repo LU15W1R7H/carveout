@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use palette::LinSrgba;
+
 pub struct ToolboxPlugin;
 impl Plugin for ToolboxPlugin {
   fn build(&self, app: &mut AppBuilder) {
@@ -16,14 +18,16 @@ pub enum ToolMode {
 
 pub struct Toolbox {
   pub mode: ToolMode,
-  pub stroke: egui::Stroke,
+  pub curve_width: f32,
+  pub curve_color: LinSrgba,
   pub undo: bool,
 }
 impl Default for Toolbox {
   fn default() -> Self {
     Self {
       mode: ToolMode::Pen,
-      stroke: egui::Stroke::new(1.0, egui::Color32::WHITE),
+      curve_width: 1.0,
+      curve_color: palette::LinSrgba::new(1.0, 1.0, 1.0, 1.0),
       undo: false,
     }
   }

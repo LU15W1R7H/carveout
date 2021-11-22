@@ -6,6 +6,8 @@ use crate::{
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 
+use palette::LinSrgba;
+
 pub struct SidebarUiPlugin;
 impl Plugin for SidebarUiPlugin {
   fn build(&self, app: &mut AppBuilder) {
@@ -25,37 +27,40 @@ fn sidebar_ui(
     ui.add_space(20.0);
 
     ui.group(|ui| {
-        ui.label("Tools");
-        ui.horizontal_wrapped(|ui| {
-            ui.selectable_value(&mut toolbox.mode, ToolMode::Pen, "✏");
-            ui.selectable_value(&mut toolbox.mode, ToolMode::Hand, "✋");
-            ui.selectable_value(&mut toolbox.mode, ToolMode::Scale, "↕");
-        });
+      ui.label("Tools");
+      ui.horizontal_wrapped(|ui| {
+        ui.selectable_value(&mut toolbox.mode, ToolMode::Pen, "✏");
+        ui.selectable_value(&mut toolbox.mode, ToolMode::Hand, "✋");
+        ui.selectable_value(&mut toolbox.mode, ToolMode::Scale, "↕");
+      });
     });
 
     ui.group(|ui| {
-        ui.label("Action");
-        toolbox.undo = ui.button("↩").clicked();
+      ui.label("Action");
+      toolbox.undo = ui.button("↩").clicked();
     });
 
     if toolbox.mode == ToolMode::Pen {
       ui.group(|ui| {
-          ui.label("Pen color");
-          let color = &mut toolbox.stroke.color;
-          ui.color_edit_button_srgba(color);
-          ui.label("Pen stroke");
-          let width = &mut toolbox.stroke.width;
-          ui.add(egui::Slider::new(width, 0.0..=10.0));
+        ui.label("Pen color");
+        // TODO: is it premultiplied?
+        let color = toolbox.curve_color;
+        let mut color = [color.red, color.green, color.blue, color.alpha];
+        ui.color_edit_button_rgba_premultiplied(&mut color);
+        let color = LinSrgba::new(color[0], color[1], color[2], color[3]);
+        toolbox.curve_color = color;
+        ui.label("Pen stroke");
+        ui.add(egui::Slider::new(&mut toolbox.curve_width, 0.0..=10.0));
       });
     }
 
     ui.group(|ui| {
-        ui.label("Save and Load");
-        if ui.button("📂").clicked() {
-          load_file_event.send(LoadFileEvent);
-        } else if ui.button("📝").clicked() {
-          save_file_event.send(SaveFileEvent);
-        }
+      ui.label("Save and Load");
+      if ui.button("📂").clicked() {
+        load_file_event.send(LoadFileEvent);
+      } else if ui.button("📝").clicked() {
+        save_file_event.send(SaveFileEvent);
+      }
     });
   });
 }
