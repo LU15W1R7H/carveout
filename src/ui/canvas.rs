@@ -1,25 +1,27 @@
 use crate::{
   canvas::{CurrentCurve, Curve, Viewport},
+  toolbox::Toolbox,
   util,
-  ui::Toolbox,
 };
 
 use bevy::prelude::*;
+use bevy_egui::EguiContext;
 use egui::emath;
 
 // canvas_ui needs to be called last,
 // because the `CentralPanel` will fill the
 // remaining area.
-pub(super) fn canvas_ui(
+pub(super) fn canvas_ui_sys(
   mut commands: Commands,
 
-  egui: &egui::CtxRef,
+  egui: Res<EguiContext>,
   mut viewport: ResMut<Viewport>,
 
   curves: Query<&Curve>,
-  current: &mut CurrentCurve,
-  toolbox: &mut Toolbox,
+  mut current: ResMut<CurrentCurve>,
+  toolbox: Res<Toolbox>,
 ) {
+  let egui = egui.ctx();
   egui::CentralPanel::default().show(egui, |ui| {
     use crate::toolbox::ToolMode;
 
@@ -102,7 +104,7 @@ fn render_curves<'a>(
         .points
         .iter()
         .cloned()
-        .map(|p| egui::Pos2::new(p.x, p.y))
+        .map(util::pos_bevy2egui)
         .map(|p| canvas_to_view * p)
         .collect();
       shapes.push(egui::Shape::line(points, stroke));
