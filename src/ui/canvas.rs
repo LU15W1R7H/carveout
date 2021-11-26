@@ -45,9 +45,10 @@ pub(super) fn canvas_ui_sys(
     match &toolbox.mode {
       ToolMode::Pen => {
         if let Some(pointer_pos) = response.interact_pointer_pos() {
+          let curve_width = view_to_canvas.scale().length() * toolbox.curve_width;
           let current = current
             .0
-            .get_or_insert(Curve::new(toolbox.curve_width, toolbox.curve_color));
+            .get_or_insert(Curve::new(curve_width, toolbox.curve_color));
 
           let canvas_pos = view_to_canvas * pointer_pos;
           let canvas_pos = util::pos_egui2bevy(canvas_pos);
@@ -98,8 +99,9 @@ fn render_curves<'a>(
 ) {
   let mut shapes = Vec::new();
   for curve in curves {
-    let stroke = egui::Stroke::new(curve.width, util::color_palette2egui(curve.color));
     if curve.points.len() >= 2 {
+      let curve_width = canvas_to_view.scale().length() * curve.width;
+      let stroke = egui::Stroke::new(curve_width, util::color_palette2egui(curve.color));
       let points: Vec<egui::Pos2> = curve
         .points
         .iter()
