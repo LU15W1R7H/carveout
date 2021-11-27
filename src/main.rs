@@ -1,9 +1,10 @@
 #![allow(clippy::single_match)]
 
 mod canvas;
+mod geometry;
 mod savefile;
 mod splines;
-mod toolbox;
+mod tool;
 mod ui;
 mod util;
 
@@ -15,10 +16,10 @@ fn main() {
       std::time::Duration::from_millis(10),
     ))
     .add_plugins(DefaultPlugins)
-    .add_plugin(canvas::CanvasPlugin)
     .add_plugin(bevy_egui::EguiPlugin)
     .add_plugin(ui::UiPlugin)
-    .add_plugin(toolbox::ToolboxPlugin)
+    .add_plugin(canvas::CanvasPlugin)
+    .add_plugin(tool::ToolPlugin)
     .add_plugin(savefile::SavefilePlugin)
     .run();
 }

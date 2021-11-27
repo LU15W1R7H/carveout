@@ -1,4 +1,4 @@
-mod canvas;
+pub mod canvas;
 mod misc;
 mod sidebar;
 
@@ -11,6 +11,6 @@ impl Plugin for UiPlugin {
       CoreStage::Update,
       sidebar::sidebar_ui_sys.system().before("canvas"),
     );
-    app.add_system(canvas::canvas_ui_sys.system().label("canvas"));
+    app.add_plugin(canvas::CanvasUiPlugin);
   }
 }

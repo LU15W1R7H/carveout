@@ -1,31 +1,47 @@
 use crate::{
   canvas::{CurrentCurve, Curve, Viewport},
-  toolbox::Toolbox,
+  geometry::{GeometryLine, GeometryPoint},
   util,
 };
 
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
-use egui::emath;
+use egui::{emath, epaint::CircleShape};
+
+pub(super) struct CanvasUiPlugin;
+impl Plugin for CanvasUiPlugin {
+  fn build(&self, app: &mut AppBuilder) {
+    app.init_resource::<CanvasUiInfo>();
+    app.add_system(canvas_ui_sys.system().label("canvas"));
+  }
+}
+
+#[derive(Default)]
+pub struct CanvasUiInfo {
+  pub cursor_canvas_pos: Option<Vec2>,
+  pub response: Option<egui::Response>,
+}
 
 // canvas_ui needs to be called last,
 // because the `CentralPanel` will fill the
 // remaining area.
 pub(super) fn canvas_ui_sys(
-  mut commands: Commands,
-
   egui: Res<EguiContext>,
-  mut viewport: ResMut<Viewport>,
+  mut ui_info: ResMut<CanvasUiInfo>,
+  viewport: Res<Viewport>,
 
+  current_curve: Res<CurrentCurve>,
   curves: Query<&Curve>,
-  mut current: ResMut<CurrentCurve>,
-  toolbox: Res<Toolbox>,
+
+  points: Query<&GeometryPoint>,
+  lines: Query<&GeometryLine>,
 ) {
   let egui = egui.ctx();
-  egui::CentralPanel::default().show(egui, |ui| {
-    use crate::toolbox::ToolMode;
 
-    let (mut response, painter) = ui.allocate_painter(
+  // reset ui info
+  *ui_info = Default::default();
+  egui::CentralPanel::default().show(egui, |ui| {
+    let (response, mut painter) = ui.allocate_painter(
       ui.available_size_before_wrap(),
       // swallow all iteractions
       egui::Sense {
@@ -34,66 +50,32 @@ pub(super) fn canvas_ui_sys(
         focusable: true,
       },
     );
-    painter.rect_filled(response.rect, 0.0, egui::Color32::BLACK);
+    // interaction
+    ui_info.response = Some(response.clone());
 
     let view_to_canvas = viewport.view_to_canvas(response.rect);
     let canvas_to_view = viewport.canvas_to_view(response.rect);
 
-    let all_curves = curves.iter().chain(current.0.as_ref());
-    render_curves(painter, canvas_to_view, all_curves);
-
-    match &toolbox.mode {
-      ToolMode::Pen => {
-        if let Some(pointer_pos) = response.interact_pointer_pos() {
-          let curve_width = view_to_canvas.scale().length() * toolbox.curve_width;
-          let current = current
-            .0
-            .get_or_insert(Curve::new(curve_width, toolbox.curve_color));
-
-          let canvas_pos = view_to_canvas * pointer_pos;
-          let canvas_pos = util::pos_egui2bevy(canvas_pos);
-          let last = current.points.last();
-          if last != Some(&canvas_pos) {
-            current.points.push(canvas_pos);
-            response.mark_changed();
-          }
-        } else if let Some(current) = current.0.take() {
-          commands.spawn().insert(current);
-          response.mark_changed();
-        }
-      }
-      ToolMode::Hand => {
-        if egui.input().pointer.any_down() && response.hovered() {
-          let mut delta = egui.input().pointer.delta();
-          delta = delta * view_to_canvas.scale();
-          viewport.center -= <[f32; 2]>::from(delta).into();
-        }
-      }
-      ToolMode::Scale => {
-        if egui.input().pointer.any_down() && response.hovered() {
-          let mut delta = egui.input().pointer.delta();
-          delta = delta * view_to_canvas.scale();
-          viewport.size += delta.y;
-        }
-      }
+    if let Some(pointer_pos) = response.interact_pointer_pos() {
+      let canvas_pos = view_to_canvas * pointer_pos;
+      let canvas_pos = util::pos_egui2bevy(canvas_pos);
+      ui_info.cursor_canvas_pos = Some(canvas_pos);
     }
 
-    {
-      let mut size_delta = egui.input().scroll_delta;
-      size_delta = size_delta * view_to_canvas.scale() * 4.0;
-      viewport.size -= size_delta.y;
-    }
+    // rendering
+    painter.rect_filled(response.rect, 0.0, egui::Color32::BLACK);
 
-    if toolbox.undo {
-      unimplemented!();
-    }
+    let all_curves = curves.iter().chain(current_curve.0.as_ref());
+    render_curves(&mut painter, canvas_to_view, all_curves);
+    render_points(&mut painter, canvas_to_view, points.iter());
+    render_lines(&mut painter, canvas_to_view, lines.iter());
 
     response
   });
 }
 
 fn render_curves<'a>(
-  painter: egui::Painter,
+  painter: &mut egui::Painter,
   canvas_to_view: emath::RectTransform,
   curves: impl Iterator<Item = &'a Curve>,
 ) {
@@ -111,6 +93,51 @@ fn render_curves<'a>(
         .collect();
       shapes.push(egui::Shape::line(points, stroke));
     }
+  }
+  painter.extend(shapes);
+}
+
+fn render_points<'a>(
+  painter: &mut egui::Painter,
+  canvas_to_view: emath::RectTransform,
+  points: impl Iterator<Item = &'a GeometryPoint>,
+) {
+  let mut shapes = Vec::new();
+  for point in points {
+    let pos = point.pos;
+    let mut pos = util::pos_bevy2egui(pos);
+    pos = canvas_to_view * pos;
+    shapes.push(egui::Shape::Circle(CircleShape::filled(
+      pos,
+      4.0,
+      egui::Color32::BLACK,
+    )));
+    shapes.push(egui::Shape::Circle(CircleShape::stroke(
+      pos,
+      5.0,
+      egui::Stroke::new(1.0, egui::Color32::WHITE),
+    )));
+  }
+  painter.extend(shapes);
+}
+
+fn render_lines<'a>(
+  painter: &mut egui::Painter,
+  canvas_to_view: emath::RectTransform,
+  lines: impl Iterator<Item = &'a GeometryLine>,
+) {
+  let mut shapes = Vec::new();
+  for line in lines {
+    let points = [&line.p, &line.q]
+      .into_iter()
+      .map(|p| p.pos)
+      .map(util::pos_bevy2egui)
+      .map(|p| canvas_to_view * p)
+      .collect();
+    shapes.push(egui::Shape::line(
+      points,
+      egui::Stroke::new(2.0, egui::Color32::WHITE),
+    ));
   }
   painter.extend(shapes);
 }
