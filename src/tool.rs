@@ -8,7 +8,7 @@ use crate::{
 
 pub struct ToolPlugin;
 impl Plugin for ToolPlugin {
-  fn build(&self, app: &mut AppBuilder) {
+  fn build(&self, app: &mut App) {
     app.init_resource::<CursorTool>();
     app.add_system(pen_tool_sys.system());
     app.add_system(hand_tool_sys.system());
@@ -122,7 +122,6 @@ fn hand_tool_sys(
     }
     None => {
       local.last_pos = None;
-      return;
     }
   };
 }
@@ -154,7 +153,6 @@ fn scale_tool_sys(
     }
     None => {
       local.last_pos = None;
-      return;
     }
   };
 }

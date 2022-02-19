@@ -4,7 +4,7 @@ use std::{fs, path::PathBuf};
 
 pub struct SavefilePlugin;
 impl Plugin for SavefilePlugin {
-  fn build(&self, app: &mut AppBuilder) {
+  fn build(&self, app: &mut App) {
     app.add_event::<LoadFileEvent>();
     app.add_event::<SaveFileEvent>();
     app.add_system(load_sys.system());

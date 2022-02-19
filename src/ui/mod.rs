@@ -6,7 +6,7 @@ use bevy::prelude::*;
 
 pub struct UiPlugin;
 impl Plugin for UiPlugin {
-  fn build(&self, app: &mut AppBuilder) {
+  fn build(&self, app: &mut App) {
     app.add_system_to_stage(
       CoreStage::Update,
       sidebar::sidebar_ui_sys.system().before("canvas"),

@@ -11,7 +11,7 @@ mod util;
 use bevy::prelude::*;
 
 fn main() {
-  App::build()
+  App::new()
     .insert_resource(bevy::app::ScheduleRunnerSettings::run_loop(
       std::time::Duration::from_millis(10),
     ))

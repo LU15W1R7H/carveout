@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 pub struct CanvasPlugin;
 impl Plugin for CanvasPlugin {
-  fn build(&self, app: &mut AppBuilder) {
+  fn build(&self, app: &mut App) {
     app.init_resource::<CurrentCurve>();
     app.init_resource::<Viewport>();
   }
@@ -16,7 +16,7 @@ impl Plugin for CanvasPlugin {
 pub struct CurrentCurve(pub Option<Curve>);
 
 /// in canvas space
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Clone, Component, Serialize, Deserialize)]
 pub struct Curve {
   pub points: Vec<Vec2>,
   pub width: f32,

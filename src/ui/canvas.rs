@@ -10,7 +10,7 @@ use egui::{emath, epaint::CircleShape};
 
 pub(super) struct CanvasUiPlugin;
 impl Plugin for CanvasUiPlugin {
-  fn build(&self, app: &mut AppBuilder) {
+  fn build(&self, app: &mut App) {
     app.init_resource::<CanvasUiInfo>();
     app.add_system(canvas_ui_sys.system().label("canvas"));
   }
@@ -26,7 +26,7 @@ pub struct CanvasUiInfo {
 // because the `CentralPanel` will fill the
 // remaining area.
 pub(super) fn canvas_ui_sys(
-  egui: Res<EguiContext>,
+  mut egui: ResMut<EguiContext>,
   mut ui_info: ResMut<CanvasUiInfo>,
   viewport: Res<Viewport>,
 
@@ -36,7 +36,7 @@ pub(super) fn canvas_ui_sys(
   points: Query<&GeometryPoint>,
   lines: Query<&GeometryLine>,
 ) {
-  let egui = egui.ctx();
+  let egui = egui.ctx_mut();
 
   // reset ui info
   *ui_info = Default::default();

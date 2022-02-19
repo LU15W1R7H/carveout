@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Component)]
 pub struct GeometryPoint {
   /// canvas space pos
   pub pos: Vec2,
@@ -11,7 +11,7 @@ impl GeometryPoint {
   }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Component)]
 pub struct GeometryLine {
   pub p: GeometryPoint,
   pub q: GeometryPoint,

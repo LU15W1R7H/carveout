@@ -8,13 +8,13 @@ use bevy::prelude::*;
 use bevy_egui::EguiContext;
 
 pub(super) fn sidebar_ui_sys(
-  egui: Res<EguiContext>,
+  mut egui: ResMut<EguiContext>,
 
   mut cursor_tool: ResMut<CursorTool>,
   mut load_file_event: EventWriter<LoadFileEvent>,
   mut save_file_event: EventWriter<SaveFileEvent>,
 ) {
-  let egui = egui.ctx();
+  let egui = egui.ctx_mut();
 
   egui::SidePanel::left("toolbox_panel").show(egui, |ui| {
     ui.add_space(10.0);

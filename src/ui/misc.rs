@@ -3,7 +3,7 @@ use bevy_egui::EguiContext;
 
 pub struct MiscUiPlugin;
 impl Plugin for MiscUiPlugin {
-  fn build(&self, _app: &mut AppBuilder) {
+  fn build(&self, _app: &mut App) {
     //app.init_resource::<WelcomeUiState>();
     //app.add_system(welcome_window_ui.system());
   }
@@ -20,10 +20,10 @@ impl Default for WelcomeUiState {
 }
 
 #[allow(dead_code)]
-fn welcome_window_ui(mut state: Local<WelcomeUiState>, egui: Res<EguiContext>) {
+fn welcome_window_ui(mut state: Local<WelcomeUiState>, mut egui: ResMut<EguiContext>) {
   egui::Window::new("Welcome")
     .open(&mut state.open)
-    .show(egui.ctx(), |ui| {
+    .show(egui.ctx_mut(), |ui| {
       ui.label("Welcome to Carveout.");
       ui.separator();
       ui.label("A tool for modern scientific digital pen note taking.");

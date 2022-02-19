@@ -6,7 +6,7 @@ use enterpolation::{bspline::BSpline, Curve};
 
 pub struct SplinesPlugin;
 impl Plugin for SplinesPlugin {
-  fn build(&self, app: &mut AppBuilder) {
+  fn build(&self, app: &mut App) {
     app
       .add_startup_system(start_up.system())
       .add_system(ui.system());
@@ -31,8 +31,8 @@ fn start_up(mut commands: Commands) {
   commands.insert_resource(Spline::new());
 }
 
-fn ui(egui: Res<EguiContext>, mut splines: ResMut<Spline>) {
-  egui::Window::new("BSpline Control").show(egui.ctx(), |ui| {
+fn ui(mut egui: ResMut<EguiContext>, mut splines: ResMut<Spline>) {
+  egui::Window::new("BSpline Control").show(egui.ctx_mut(), |ui| {
     ui.label("Number of elements");
     let mut nelements = splines.elements.len();
     ui.add(egui::DragValue::new(&mut nelements));
@@ -69,7 +69,7 @@ fn ui(egui: Res<EguiContext>, mut splines: ResMut<Spline>) {
 
   let domain = min..=max;
 
-  egui::Window::new("BSpline").show(egui.ctx(), |ui| {
+  egui::Window::new("BSpline").show(egui.ctx_mut(), |ui| {
     use egui::{emath, Pos2, Rect, Sense};
 
     let (response, painter) = ui.allocate_painter(ui.available_size_before_wrap(), Sense::drag());
