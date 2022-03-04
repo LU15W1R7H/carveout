@@ -32,6 +32,7 @@ pub(super) fn sidebar_ui_sys(
           SpecificTool::Pen(Default::default()),
           "✏",
         );
+        selectable_tool(ui, &mut cursor_tool.specific, SpecificTool::Eraser, "Erase");
         selectable_tool(ui, &mut cursor_tool.specific, SpecificTool::Hand, "✋");
         selectable_tool(ui, &mut cursor_tool.specific, SpecificTool::Scale, "↕");
         selectable_tool(

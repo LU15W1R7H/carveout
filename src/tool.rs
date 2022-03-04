@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-  canvas::{CurrentCurve, Viewport},
+  canvas::{CurrentCurve, Curve, Viewport},
   geometry::{GeometryLine, GeometryPoint},
   ui::canvas::CanvasUiInfo,
 };
@@ -11,6 +11,7 @@ impl Plugin for ToolPlugin {
   fn build(&self, app: &mut App) {
     app.init_resource::<CursorTool>();
     app.add_system(pen_tool_sys.system());
+    app.add_system(eraser_tool_sys.system());
     app.add_system(hand_tool_sys.system());
     app.add_system(scale_tool_sys.system());
     app.add_system(point_placer_tool_sys.system());
@@ -35,6 +36,7 @@ impl Default for CursorTool {
 
 pub enum SpecificTool {
   Pen(PenTool),
+  Eraser,
   Hand,
   Scale,
   PointPlacer,
@@ -92,6 +94,34 @@ fn pen_tool_sys(
       }
       None => {}
     },
+  };
+}
+
+const ERASER_RADIUS: f32 = 0.01;
+fn eraser_tool_sys(
+  mut commands: Commands,
+  cursor_tool: Res<CursorTool>,
+  ui: Res<CanvasUiInfo>,
+  curves: Query<(Entity, &Curve)>,
+) {
+  match &cursor_tool.specific {
+    SpecificTool::Eraser => {}
+    _ => return,
+  }
+  match ui.cursor_canvas_pos {
+    Some(cursor_pos) => {
+      'CURVE_LOOP: for (curve_entity, curve) in curves.iter() {
+        for curve_point in &curve.points {
+          let diff = *curve_point - cursor_pos;
+          let dist = diff.length_squared();
+          if dist <= ERASER_RADIUS.powi(2) {
+            commands.entity(curve_entity).despawn();
+            continue 'CURVE_LOOP;
+          }
+        }
+      }
+    }
+    None => {}
   };
 }
 
