@@ -97,8 +97,12 @@ fn pen_tool_sys(
   };
 }
 
-const ERASER_RADIUS: f32 = 0.01;
+#[derive(Default)]
+struct EraserToolSys {
+  last_pos: Option<Vec2>,
+}
 fn eraser_tool_sys(
+  mut local: Local<EraserToolSys>,
   mut commands: Commands,
   cursor_tool: Res<CursorTool>,
   ui: Res<CanvasUiInfo>,
@@ -108,21 +112,35 @@ fn eraser_tool_sys(
     SpecificTool::Eraser => {}
     _ => return,
   }
-  match ui.cursor_canvas_pos {
-    Some(cursor_pos) => {
+  match [local.last_pos, ui.cursor_canvas_pos] {
+    [Some(e0), Some(e1)] => {
+      let e01 = e1 - e0;
       'CURVE_LOOP: for (curve_entity, curve) in curves.iter() {
-        for curve_point in &curve.points {
-          let diff = *curve_point - cursor_pos;
-          let dist = diff.length_squared();
-          if dist <= ERASER_RADIUS.powi(2) {
+        for [c0, c1] in curve.points.array_windows::<2>().copied() {
+          let c01 = c1 - c0;
+
+          if are_segments_intersecting(e0, e01, c0, c01) {
             commands.entity(curve_entity).despawn();
             continue 'CURVE_LOOP;
           }
         }
       }
     }
-    None => {}
+    _ => {}
   };
+  local.last_pos = ui.cursor_canvas_pos;
+}
+fn are_segments_intersecting(p0: Vec2, pv: Vec2, q0: Vec2, qv: Vec2) -> bool {
+  let pvqv_cross = pv.perp_dot(qv);
+  if pvqv_cross.abs() > f32::EPSILON {
+    let range01 = 0.0..=1.0;
+    let p0q0 = q0 - p0;
+    let t = p0q0.perp_dot(pv) / pvqv_cross;
+    let s = p0q0.perp_dot(qv) / pvqv_cross;
+    range01.contains(&t) && range01.contains(&s)
+  } else {
+    false
+  }
 }
 
 #[derive(Default)]
@@ -139,21 +157,14 @@ fn hand_tool_sys(
     SpecificTool::Hand => {}
     _ => return,
   };
-  match ui.cursor_canvas_pos {
-    Some(pos) => {
-      match local.last_pos {
-        Some(last) => {
-          let delta = pos - last;
-          viewport.center -= delta;
-        }
-        _ => {}
-      }
-      local.last_pos = Some(pos);
+  match [ui.cursor_canvas_pos, local.last_pos] {
+    [Some(pos), Some(last)] => {
+      let delta = pos - last;
+      viewport.center -= delta;
     }
-    None => {
-      local.last_pos = None;
-    }
+    _ => {}
   };
+  local.last_pos = ui.cursor_canvas_pos;
 }
 
 #[derive(Default)]

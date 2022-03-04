@@ -1,3 +1,4 @@
+#![feature(array_windows)]
 #![allow(clippy::single_match)]
 
 mod canvas;
