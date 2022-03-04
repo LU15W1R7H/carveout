@@ -1,5 +1,6 @@
 use crate::canvas::Curve;
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 
 pub struct SavefilePlugin;
@@ -43,7 +44,8 @@ fn load_sys(
       curves
         .iter()
         .for_each(|c| commands.entity(c.0).despawn_recursive());
-      let curves: Vec<Curve> = bincode::deserialize(&data).unwrap();
+      let reader = flexbuffers::Reader::get_root(data.as_ref()).unwrap();
+      let curves: Vec<Curve> = Deserialize::deserialize(reader).unwrap();
       curves.into_iter().for_each(|c| {
         commands.spawn().insert(c);
       });
@@ -74,8 +76,10 @@ fn save_sys(mut event: EventReader<SaveFileEvent>, curves: Query<&Curve>) {
 
   path.set_extension(EXTENSION);
 
+  let mut serializer = flexbuffers::FlexbufferSerializer::new();
   let curves: Vec<Curve> = curves.iter().cloned().collect();
-  let data = bincode::serialize(&*curves).unwrap();
+  curves.serialize(&mut serializer).unwrap();
+  let data = serializer.take_buffer();
   match fs::write(path, data) {
     Ok(()) => (),
     Err(e) => println!("{}", e),
