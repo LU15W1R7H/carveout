@@ -20,6 +20,8 @@ impl Plugin for CanvasUiPlugin {
 pub struct CanvasUiInfo {
   pub cursor_canvas_pos: Option<Vec2>,
   pub response: Option<egui::Response>,
+  pub view_to_canvas: Option<emath::RectTransform>,
+  pub canvas_to_view: Option<emath::RectTransform>,
 }
 
 // canvas_ui needs to be called last,
@@ -56,11 +58,12 @@ pub(super) fn canvas_ui_sys(
     let view_to_canvas = viewport.view_to_canvas(response.rect);
     let canvas_to_view = viewport.canvas_to_view(response.rect);
 
-    if let Some(pointer_pos) = response.interact_pointer_pos() {
-      let canvas_pos = view_to_canvas * pointer_pos;
-      let canvas_pos = util::pos_egui2bevy(canvas_pos);
-      ui_info.cursor_canvas_pos = Some(canvas_pos);
-    }
+    ui_info.view_to_canvas = Some(view_to_canvas);
+    ui_info.canvas_to_view = Some(canvas_to_view);
+
+    ui_info.cursor_canvas_pos = response
+      .interact_pointer_pos()
+      .map(|pointer_pos| util::pos_egui2bevy(view_to_canvas * pointer_pos));
 
     // rendering
     painter.rect_filled(response.rect, 0.0, egui::Color32::BLACK);

@@ -4,6 +4,7 @@ use crate::{
   canvas::{CurrentCurve, Curve, Viewport},
   geometry::{GeometryLine, GeometryPoint},
   ui::canvas::CanvasUiInfo,
+  util,
 };
 
 pub struct ToolPlugin;
@@ -145,7 +146,7 @@ fn are_segments_intersecting(p0: Vec2, pv: Vec2, q0: Vec2, qv: Vec2) -> bool {
 
 #[derive(Default)]
 struct HandToolSys {
-  last_pos: Option<Vec2>,
+  last_pos: Option<egui::Pos2>,
 }
 fn hand_tool_sys(
   mut local: Local<HandToolSys>,
@@ -157,14 +158,19 @@ fn hand_tool_sys(
     SpecificTool::Hand => {}
     _ => return,
   };
-  match [ui.cursor_canvas_pos, local.last_pos] {
-    [Some(pos), Some(last)] => {
-      let delta = pos - last;
-      viewport.center -= delta;
+  match (
+    ui.response.as_ref().and_then(|r| r.interact_pointer_pos()),
+    local.last_pos,
+    ui.view_to_canvas,
+  ) {
+    (Some(pos), Some(last), Some(view_to_canvas)) => {
+      let mut delta = last - pos;
+      delta = view_to_canvas.scale() * delta;
+      viewport.center += util::vec_egui2bevy(delta);
     }
     _ => {}
   };
-  local.last_pos = ui.cursor_canvas_pos;
+  local.last_pos = ui.response.as_ref().and_then(|r| r.interact_pointer_pos());
 }
 
 #[derive(Default)]
@@ -181,21 +187,14 @@ fn scale_tool_sys(
     SpecificTool::Scale => {}
     _ => return,
   };
-  match ui.cursor_canvas_pos {
-    Some(pos) => {
-      match local.last_pos {
-        Some(last) => {
-          let delta = last - pos;
-          viewport.size += delta.y;
-        }
-        _ => {}
-      }
-      local.last_pos = Some(pos);
+  match [ui.cursor_canvas_pos, local.last_pos] {
+    [Some(pos), Some(last)] => {
+      let delta = pos - last;
+      viewport.center -= delta;
     }
-    None => {
-      local.last_pos = None;
-    }
+    _ => {}
   };
+  local.last_pos = ui.cursor_canvas_pos;
 }
 
 fn point_placer_tool_sys(
